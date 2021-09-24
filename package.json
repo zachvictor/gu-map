@@ -1,5 +1,5 @@
 {
-  "name": "@zmvictor/gu-map",
+  "name": "@zachvictor/gu-map",
   "version": "1.1.0",
   "description": "The GuMap class extends JavaScript Map to support immutability and dot accessor notation.",
   "main": "index.js",
