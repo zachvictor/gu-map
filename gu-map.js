@@ -19,6 +19,21 @@ class GuMap extends Map {
     const errImmutable = () => cfg.immutableMap ? ' Map is immutable.' : ' Properties are immutable.';
     const errProp = (verb, key) => ` Cannot ${verb} property ${key}.`;
     const errNonexistent = (key) => ` Property ${key} does not exist.`;
+    /**
+     * @typedef MapBridge => Map prototype. See https://tc39.es/ecma262/#sec-properties-of-the-map-prototype-object
+     * @property {Function} clear
+     * @property {Function} entries
+     * @property {Function} forEach
+     * @property {Function} get
+     * @property {Function} has
+     * @property {Function} keys
+     * @property {Function} set
+     * @property {number} size
+     * @property {Function} values
+     */
+    /**
+     * @type MapBridge
+     */
     const bridge = {
       clear: () => _map.clear(),
       entries: () => _map.entries(),
@@ -55,7 +70,7 @@ class GuMap extends Map {
       }
       return throwXorReturn(err, ret);
     }
-    const doGet = (key/*, proxyHandler */) => {
+    const doGet = (key) => {
       let err, ret = false;
       // Bridge native Map properties except Symbol.iterator (bridged properties cannot be overwritten).
       if (key in bridge) {
