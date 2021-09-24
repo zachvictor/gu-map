@@ -1,0 +1,31 @@
+{
+  "name": "gu-map",
+  "version": "1.0.0",
+  "description": "GuMap class that extends JavaScript Map to support immutability and dot accessor notation.",
+  "license": "Apache 2.0",
+  "author": "zachvictor",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+[https://github.com/zachvictor/gu-map.git](https://github.com/zachvictor/gu-map.git)"
+  },
+  "files": [
+    "gs-map.js",
+    "gs-map-config.js"
+  ],
+  "keywords": [
+    "ES6",
+    "ESNext",
+    "Map",
+    "immutable",
+    "dot",
+    "dotaccessor",
+    "dotaccessornotation",
+    "Proxy"
+  ],
+  "private": false,
+  "bugs": {
+    "url": "[https://github.com/zachvictor/gu-map/issues](https://github.com/zachvictor/gu-map/issues)"
+  },
+  "homepage": "[https://github.com/zachvictor/gu-map#readme](https://github.com/zachvictor/gu-map#readme)"
+}
