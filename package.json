@@ -32,6 +32,6 @@
   },
   "homepage": "https://github.com/zachvictor/gu-map#readme",
   "publishConfig": {
-    "registry":"https://npm.pkg.github.com/@zmvictor"
+    "registry":"https://npm.pkg.github.com/"
   }
 }
