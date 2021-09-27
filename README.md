@@ -14,4 +14,4 @@ _**What is the GuMapConfig class for?**_ \
 The GuMapConfig class structures the parameter object of the GuMap constructor. It helps humans and machines "understand" the parameterization, the one for practical purposes, the other (typically) for static code analysis.
 
 _**What’s in a name?**_ \
-The name “GuMap” is a bilingual compound word, transliterating 固Map (_gù-map_) into Latin letters.
+The name “GuMap” is a bilingual compound word, transliterating 固Map (_gù-map_) into Latin letters. 固 can mean strong, solid, and sure and is meant to allude to this class’s immutability-features. “Gu” is also intended playfully as a homophonic pun on “good” (English) or “gut” (German), _daß diese Klasse für_ 固 _und_ gut _gehalten würde._ The glyph 固 is found in Bronze Age sources and finds its modern form in Han Chinese with equivalents in Kanji and Hanja. For information, see the [entry for 固 in Wiktionary](https://en.wiktionary.org/wiki/%E5%9B%BA).
