@@ -1,5 +1,5 @@
 'use strict';
-import GuMapConfig from './gu-map-config';
+import GuMapConfig from './gu-map-config.js';
 
 class GuMap extends Map {
   /**

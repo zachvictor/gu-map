@@ -48,8 +48,10 @@ Creates a new GuMap. Returns a Proxy wrapping the Map.
 |-----------------------------------|---------|---------|--------------------------------------------------------------------------|
 | `immutableMap`                    | boolean | false   | Complete immutability—no add, change, or delete                          |
 | `immutableProperties`             | boolean | false   | Properties can be added but not changed                                  |
-| `throwErrorOnPropertyMutate`      | boolean | false   | Throw error on mutation attempt (vs silent failure)                      |
+| `throwErrorOnPropertyMutate`      | boolean | false   | Throw error on mutation attempt (see note below)                         |
 | `throwErrorOnNonexistentProperty` | boolean | false   | Throw error when accessing nonexistent property (vs returning undefined) |
+
+**Note on `throwErrorOnPropertyMutate`:** When `false`, mutation attempts are blocked but the behavior depends on JavaScript's strict mode. In ES modules (strict mode), blocked mutations throw `TypeError`. In non-strict mode, they fail silently.
 
 ### Bridged Map Methods
 
@@ -57,6 +59,14 @@ All standard Map methods are available: `get()`, `set()`, `has()`, `entries()`, 
 `clear()`, `size`.
 
 **Note:** `Map[@@iterator]` is not bridged—use `entries()` instead.
+
+## Testing
+
+```bash
+npm test
+```
+
+Uses Node.js built-in test runner with comprehensive coverage of all configuration options and edge cases.
 
 ## Why "GuMap"?
 
