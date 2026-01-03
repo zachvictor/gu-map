@@ -1,17 +1,68 @@
-# GuMap — 固Map
-固 _is strong, solid, and sure—an allusion to this class’s immutability-features._
+# GuMap
 
-_**What is GuMap? What does it do?**_ \
-GuMap is a JavaScript class that extends the Map prototype to support dot accessor notation and immutability features. Unlike Map, GuMap can be configured to throw errors on state mutation.
+[![npm version](https://img.shields.io/npm/v/@zachvictor/gu-map.svg)](https://www.npmjs.com/package/@zachvictor/gu-map)
+[![license](https://img.shields.io/npm/l/@zachvictor/gu-map.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-_**What value does GuMap add?**_ \
-Dot accessor notation is idiomatic and concise. Immutability can protect against unwanted state mutation. A Map that supports immutable properties may be able to serve compositional strategies that draw on functional programming patterns. Throwing an error on state mutation can help pinpoint logical errors quickly and prevent a mutated variable from "metastasizing" into a bigger problem.
+A JavaScript Map extension with **dot accessor notation** and **immutability** features.
 
-_**How is GuMap implemented?**_ \
-The GuMap class extends Map. Its constructor returns a Proxy, which is used to implement immutability, dot accessor notation for get and set, and "bridges" to standard Map properties. The GuMap class does not bridge `Map[@@iterator]`. Please use entries() instead.
+## Installation
 
-_**What is the GuMapConfig class for?**_ \
-The GuMapConfig class structures the parameter object of the GuMap constructor. It helps humans and machines "understand" the parameterization, the one for practical purposes, the other (typically) for static code analysis.
+```bash
+npm install @zachvictor/gu-map
+```
 
-_**What’s in a name?**_ \
-The name “GuMap” is a bilingual compound word, transliterating 固Map (_gù-map_) into Latin letters. 固 can mean strong, solid, and sure and is meant to allude to this class’s immutability-features. “Gu” is also intended playfully as a homophonic pun on “good” (English) or “gut” (German), _daß diese Klasse für_ 固 _und_ gut _gehalten würde._ The glyph 固 is found in Bronze Age sources and finds its modern form in Han Chinese with equivalents in Kanji and Hanja. For information, see the [entry for 固 in Wiktionary](https://en.wiktionary.org/wiki/%E5%9B%BA).
+## Usage
+
+```javascript
+import { GuMap, GuMapConfig } from '@zachvictor/gu-map';
+
+// Basic usage with dot notation
+const map = new GuMap([['foo', 1], ['bar', 2]]);
+console.log(map.foo);  // 1
+map.baz = 3;           // set via dot notation
+map.get('baz');        // 3 (standard Map method also works)
+
+// Immutable properties (can add, cannot change)
+const config = { immutableProperties: true, throwErrorOnPropertyMutate: true };
+const immutableProps = new GuMap([['x', 10]], config);
+immutableProps.y = 20;  // OK: new property
+immutableProps.x = 99;  // Error: cannot change existing property
+
+// Fully immutable map
+const frozen = new GuMap([['a', 1]], { immutableMap: true, throwErrorOnPropertyMutate: true });
+frozen.b = 2;  // Error: map is immutable
+```
+
+## API
+
+### `new GuMap(iterable?, config?)`
+
+Creates a new GuMap. Returns a Proxy wrapping the Map.
+
+- `iterable` — Array or iterable of key-value pairs (same as `Map`)
+- `config` — `GuMapConfig` object or plain object with options
+
+### `GuMapConfig` Options
+
+| Option                            | Type    | Default | Description                                                              |
+|-----------------------------------|---------|---------|--------------------------------------------------------------------------|
+| `immutableMap`                    | boolean | false   | Complete immutability—no add, change, or delete                          |
+| `immutableProperties`             | boolean | false   | Properties can be added but not changed                                  |
+| `throwErrorOnPropertyMutate`      | boolean | false   | Throw error on mutation attempt (vs silent failure)                      |
+| `throwErrorOnNonexistentProperty` | boolean | false   | Throw error when accessing nonexistent property (vs returning undefined) |
+
+### Bridged Map Methods
+
+All standard Map methods are available: `get()`, `set()`, `has()`, `entries()`, `keys()`, `values()`, `forEach()`,
+`clear()`, `size`.
+
+**Note:** `Map[@@iterator]` is not bridged—use `entries()` instead.
+
+## Why "GuMap"?
+
+The name combines 固 (gù, meaning "solid" or "firm" in Chinese) with Map—a nod to the immutability features.
+Pronunciation: "goo-map".
+
+## License
+
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
