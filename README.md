@@ -96,4 +96,4 @@ The name combines 固 (gù, meaning "solid" or "firm" in Chinese) with Map—a n
 
 ## License
 
-[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+[MIT](LICENSE)

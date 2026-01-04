@@ -27,7 +27,7 @@
     "Proxy"
   ],
   "author": "zmvictor",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "private": false,
   "bugs": {
     "url": "https://github.com/zachvictor/gu-map/issues"
