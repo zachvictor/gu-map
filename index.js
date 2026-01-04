@@ -1,5 +1,4 @@
-'use strict';
-import GuMap from './gu-map';
-import GuMapConfig from './gu-map-config';
+import { createGuMap, GuMap } from './gu-map.js';
+import { normalizeConfig, GuMapConfig } from './gu-map-config.js';
 
-export {GuMap, GuMapConfig};
+export { createGuMap, GuMap, normalizeConfig, GuMapConfig };
