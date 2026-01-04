@@ -1,117 +1,164 @@
-'use strict';
-import GuMapConfig from './gu-map-config.js';
+import { normalizeConfig } from './gu-map-config.js';
 
-class GuMap extends Map {
-  /**
-   * GuMap extends Map to support dot accessor notation and immutability features.
-   * This class does not bridge Map[@@iterator]: please use entries() instead.
-   * The class name is a bilingual compound word, transliterating 固Map ("gù-map") into Latin letters.
-   * 固 can mean strong, solid, and sure -- an allusion to this class's immutability-features.
-   * @param {Array|Object} iterable
-   * @param {GuMapConfig|Object} config
-   * @return {Proxy} wrapped Map implementing dot notation for property accessors and enforcing property-level immutability on set.
-   */
-  constructor(iterable, config) {
-    super(iterable);
-    const _map = this; // "this" after super before proxy refers to the "internal" Map.
-    const cfg = new GuMapConfig(config);
-    const errBase = 'GuMap Error:';
-    const errImmutable = () => cfg.immutableMap ? ' Map is immutable.' : ' Properties are immutable.';
-    const errProp = (verb, key) => ` Cannot ${verb} property ${key}.`;
-    const errNonexistent = (key) => ` Property ${key} does not exist.`;
-    /**
-     * @typedef MapBridge => Map prototype. See https://tc39.es/ecma262/#sec-properties-of-the-map-prototype-object
-     * @property {Function} clear
-     * @property {Function} entries
-     * @property {Function} forEach
-     * @property {Function} get
-     * @property {Function} has
-     * @property {Function} keys
-     * @property {Function} set
-     * @property {number} size
-     * @property {Function} values
-     */
-    /**
-     * @type MapBridge
-     */
-    const bridge = {
-      clear: () => _map.clear(),
-      entries: () => _map.entries(),
-      forEach: (callbackFn, thisArg) => {
-        // Ignore 3rd arg to block direct access to "internal" Map.
-        _map.forEach((value, key) => {
-          // Use mapProxy for 3rd arg to block direct access and prevent unwanted mutation.
-          callbackFn(value, key, mapProxy);
-        }, thisArg)},
-      get: (getKey) => doGet(getKey),
-      has: (hasKey) => _map.has(hasKey),
-      keys: () => _map.keys(),
-      set: (setKey, setValue) => doSet(setKey, setValue),
-      get size() {
-        return _map.size;
-      },
-      values: () => _map.values()
+/**
+ * Check if a key is a bridge property (Map method/property that should be forwarded).
+ */
+const isBridgeKey = (key) => BRIDGE_KEYS.has(key);
+
+const BRIDGE_KEYS = new Set([
+  'clear', 'delete', 'entries', 'forEach', 'get', 'has',
+  'keys', 'set', 'size', 'values', Symbol.iterator, Symbol.toStringTag,
+]);
+
+/**
+ * Create error message helpers bound to a config.
+ */
+const createErrorHelpers = (config) => {
+  const base = 'GuMap Error:';
+  return {
+    immutable: () => config.immutableMap ? ' Map is immutable.' : ' Properties are immutable.',
+    prop: (verb, key) => ` Cannot ${verb} property ${String(key)}.`,
+    nonexistent: (key) => ` Property ${String(key)} does not exist.`,
+    base,
+  };
+};
+
+/**
+ * Create the bridge object that forwards Map methods through the proxy.
+ */
+const createBridge = (map, getProxy, doGet, doSet, doDelete) => ({
+  clear: () => map.clear(),
+  delete: (key) => doDelete(key),
+  entries: () => map.entries(),
+  forEach: (callbackFn, thisArg) => {
+    map.forEach((value, key) => {
+      callbackFn(value, key, getProxy());
+    }, thisArg);
+  },
+  get: (key) => doGet(key),
+  has: (key) => map.has(key),
+  keys: () => map.keys(),
+  set: (key, value) => doSet(key, value),
+  get size() {
+    return map.size;
+  },
+  values: () => map.values(),
+  [Symbol.iterator]: () => map.entries(),
+  [Symbol.toStringTag]: 'GuMap',
+});
+
+/**
+ * Create the core operations (doGet, doSet, doDelete) for the proxy traps.
+ */
+const createOperations = (map, config, getBridge, errors) => {
+  const doGet = (key) => {
+    const bridge = getBridge();
+    if (isBridgeKey(key)) {
+      return bridge[key];
     }
-    const throwXorReturn = (err, ret) => {
-      if (err) throw new Error(err);
-      return ret;
+    if (!map.has(key) && config.throwErrorOnNonexistentProperty) {
+      throw new Error(`${errors.base}${errors.nonexistent(key)}${errors.prop('get', key)}`);
     }
-    const doDelete = (key) => {
-      let err, ret = false;
-      // If Map/prop is immutable, don't delete prop, and prepare error msg (per options).
-      if (cfg.immutableMap || cfg.immutableProperties) {
-        err = cfg.throwErrorOnPropertyMutate ? `${errBase}${errImmutable()}${errProp('delete', key)}` : '';
-        // If prop doesn't exist, then prepare error message (per options).
-      } else if (!_map.has(key) && cfg.throwErrorOnNonexistentProperty) {
-        err = `${errBase}${errImmutable()}${errNonexistent('delete', key)}`;
-        // Default case: delete entry (nonexistent key returns false).
-      } else {
-        ret = _map.delete(key);
+    return map.get(key);
+  };
+
+  const doSet = (key, value) => {
+    if (isBridgeKey(key)) {
+      if (config.throwErrorOnPropertyMutate) {
+        throw new Error(`${errors.base}${errors.immutable()}${errors.prop('set', key)}`);
       }
-      return throwXorReturn(err, ret);
+      return false;
     }
-    const doGet = (key) => {
-      let err, ret = false;
-      // Bridge native Map properties except Symbol.iterator (bridged properties cannot be overwritten).
-      if (key in bridge) {
-        ret = bridge[key];
+    if (config.immutableMap || (config.immutableProperties && map.has(key))) {
+      if (config.throwErrorOnPropertyMutate) {
+        throw new Error(`${errors.base}${errors.immutable()}${errors.prop('set', key)}`);
       }
-      // If prop doesn't exist, then prepare error msg (per options).
-      else if (!_map.has(key) && cfg.throwErrorOnNonexistentProperty) {
-        err = `${errBase}${errNonexistent(key)}${errProp('get', key)}`;
-        // Default case: native Map getter (nonexistent key returns undefined).
-      } else {
-        ret = _map.get(key);
+      return false;
+    }
+    map.set(key, value);
+    return true;
+  };
+
+  const doDelete = (key) => {
+    if (config.immutableMap || config.immutableProperties) {
+      if (config.throwErrorOnPropertyMutate) {
+        throw new Error(`${errors.base}${errors.immutable()}${errors.prop('delete', key)}`);
       }
-      return throwXorReturn(err, ret);
-    };
-    const doSet = (key, value) => {
-      let err, ret = false;
-      // If Map is immutable, or if props are immutable and prop exists, then don't set prop, and prepare error msg (per options).
-      if (cfg.immutableMap || (cfg.immutableProperties && _map.has(key)) || key in bridge) {
-        err = cfg.throwErrorOnPropertyMutate ? `${errBase}${errImmutable()}${errProp('set', key)}` : '';
-      // Default case: super behavior for deleting an entry.
-      } else {
-        ret = _map.set(key, value);
+      return false;
+    }
+    if (!map.has(key) && config.throwErrorOnNonexistentProperty) {
+      throw new Error(`${errors.base}${errors.nonexistent(key)}${errors.prop('delete', key)}`);
+    }
+    return map.delete(key);
+  };
+
+  const doHas = (key) => {
+    if (isBridgeKey(key)) {
+      return true;
+    }
+    return map.has(key);
+  };
+
+  return { doGet, doSet, doDelete, doHas };
+};
+
+/**
+ * Create a GuMap — a Map wrapped in a Proxy supporting dot notation and immutability.
+ *
+ * The name "GuMap" transliterates 固Map (gù-map) where 固 means solid/firm,
+ * alluding to the immutability features.
+ *
+ * @param {Iterable<[any, any]>} [iterable] - Key-value pairs to initialize the map
+ * @param {Object} [options] - Configuration options
+ * @param {boolean} [options.immutableMap] - Complete immutability (no add/change/delete)
+ * @param {boolean} [options.immutableProperties] - Properties can be added but not changed
+ * @param {boolean} [options.throwErrorOnPropertyMutate] - Throw on blocked mutation
+ * @param {boolean} [options.throwErrorOnNonexistentProperty] - Throw on missing property access
+ * @returns {Map<any, any> & Record<string, any>} A proxied Map with dot notation and immutability support
+ */
+function createGuMap(iterable, options) {
+  const map = new Map(iterable);
+  const config = normalizeConfig(options);
+  const errors = createErrorHelpers(config);
+
+  let proxy;
+  let bridge;
+
+  const getProxy = () => proxy;
+  const getBridge = () => bridge;
+
+  const { doGet, doSet, doDelete, doHas } = createOperations(map, config, getBridge, errors);
+
+  bridge = createBridge(map, getProxy, doGet, doSet, doDelete);
+
+  proxy = new Proxy(map, {
+    get(_target, key) {
+      return doGet(key);
+    },
+    set(_target, key, value) {
+      return doSet(key, value);
+    },
+    deleteProperty(_target, key) {
+      return doDelete(key);
+    },
+    has(_target, key) {
+      return doHas(key);
+    },
+    ownKeys(_target) {
+      return [...map.keys(), ...BRIDGE_KEYS].filter(k => typeof k === 'string' || typeof k === 'symbol');
+    },
+    getOwnPropertyDescriptor(_target, key) {
+      if (isBridgeKey(key) || map.has(key)) {
+        return { configurable: true, enumerable: true, value: doGet(key) };
       }
-      return throwXorReturn(err, ret);
-    };
-    const mapProxy = new Proxy(this, {
-      deleteProperty(target, key) {
-        return doDelete(key);
-      },
-      set(target, key, value) {
-        return doSet(key, value);
-      },
-      setPrototypeOf() {
-        throw new Error(`${errBase} The prototype cannot be changed.`);
-      },
-      get(target, key) {
-        return doGet(key);
-      }
-    });
-    return mapProxy;
-  }
+      return undefined;
+    },
+    setPrototypeOf(_target) {
+      throw new Error(`${errors.base} The prototype cannot be changed.`);
+    },
+  });
+
+  return proxy;
 }
 
-export default GuMap;
+export { createGuMap, createGuMap as GuMap };

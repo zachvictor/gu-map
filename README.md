@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@zachvictor/gu-map.svg)](https://www.npmjs.com/package/@zachvictor/gu-map)
 [![license](https://img.shields.io/npm/l/@zachvictor/gu-map.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-A JavaScript Map extension with **dot accessor notation** and **immutability** features.
+A JavaScript Map wrapper with **dot accessor notation** and **immutability** features.
 
 ## Installation
 
@@ -14,51 +14,73 @@ npm install @zachvictor/gu-map
 ## Usage
 
 ```javascript
-import { GuMap, GuMapConfig } from '@zachvictor/gu-map';
+import { createGuMap } from '@zachvictor/gu-map';
 
 // Basic usage with dot notation
-const map = new GuMap([['foo', 1], ['bar', 2]]);
+const map = createGuMap([['foo', 1], ['bar', 2]]);
 console.log(map.foo);  // 1
 map.baz = 3;           // set via dot notation
-map.get('baz');        // 3 (standard Map method also works)
+map.get('baz');        // 3 (standard Map methods work too)
+
+// Iteration works as expected
+for (const [key, value] of map) {
+  console.log(key, value);
+}
 
 // Immutable properties (can add, cannot change)
-const config = { immutableProperties: true, throwErrorOnPropertyMutate: true };
-const immutableProps = new GuMap([['x', 10]], config);
+const immutableProps = createGuMap([['x', 10]], {
+  immutableProperties: true,
+  throwErrorOnPropertyMutate: true
+});
 immutableProps.y = 20;  // OK: new property
 immutableProps.x = 99;  // Error: cannot change existing property
 
 // Fully immutable map
-const frozen = new GuMap([['a', 1]], { immutableMap: true, throwErrorOnPropertyMutate: true });
+const frozen = createGuMap([['a', 1]], {
+  immutableMap: true,
+  throwErrorOnPropertyMutate: true
+});
 frozen.b = 2;  // Error: map is immutable
 ```
 
 ## API
 
-### `new GuMap(iterable?, config?)`
+### `createGuMap(iterable?, options?)`
 
-Creates a new GuMap. Returns a Proxy wrapping the Map.
+Creates a new GuMap. Returns a Proxy wrapping a Map instance.
 
 - `iterable` — Array or iterable of key-value pairs (same as `Map`)
-- `config` — `GuMapConfig` object or plain object with options
+- `options` — Configuration object (see below)
 
-### `GuMapConfig` Options
+Returns a proxy that passes `instanceof Map` checks.
 
-| Option                            | Type    | Default | Description                                                              |
-|-----------------------------------|---------|---------|--------------------------------------------------------------------------|
-| `immutableMap`                    | boolean | false   | Complete immutability—no add, change, or delete                          |
-| `immutableProperties`             | boolean | false   | Properties can be added but not changed                                  |
-| `throwErrorOnPropertyMutate`      | boolean | false   | Throw error on mutation attempt (see note below)                         |
-| `throwErrorOnNonexistentProperty` | boolean | false   | Throw error when accessing nonexistent property (vs returning undefined) |
+### Configuration Options
+
+| Option                            | Type    | Default | Description                                                  |
+|-----------------------------------|---------|---------|--------------------------------------------------------------|
+| `immutableMap`                    | boolean | false   | Complete immutability—no add, change, or delete              |
+| `immutableProperties`             | boolean | false   | Properties can be added but not changed                      |
+| `throwErrorOnPropertyMutate`      | boolean | false   | Throw error on mutation attempt (see note below)             |
+| `throwErrorOnNonexistentProperty` | boolean | false   | Throw error when accessing nonexistent property              |
 
 **Note on `throwErrorOnPropertyMutate`:** When `false`, mutation attempts are blocked but the behavior depends on JavaScript's strict mode. In ES modules (strict mode), blocked mutations throw `TypeError`. In non-strict mode, they fail silently.
 
-### Bridged Map Methods
+### Supported Map Methods
 
-All standard Map methods are available: `get()`, `set()`, `has()`, `entries()`, `keys()`, `values()`, `forEach()`,
-`clear()`, `size`.
+All standard Map methods work: `get()`, `set()`, `has()`, `delete()`, `entries()`, `keys()`, `values()`, `forEach()`, `clear()`, `size`, and `Symbol.iterator`.
 
-**Note:** `Map[@@iterator]` is not bridged—use `entries()` instead.
+### Operators
+
+- **Dot notation**: `map.foo` and `map.foo = 1`
+- **`in` operator**: `'foo' in map`
+- **Spread/iteration**: `[...map]` and `for...of`
+- **`delete` operator**: `delete map.foo`
+
+### Aliases
+
+For backwards compatibility:
+- `GuMap` is an alias for `createGuMap`
+- `GuMapConfig` is an alias for `normalizeConfig`
 
 ## Testing
 
@@ -66,12 +88,11 @@ All standard Map methods are available: `get()`, `set()`, `has()`, `entries()`, 
 npm test
 ```
 
-Uses Node.js built-in test runner with comprehensive coverage of all configuration options and edge cases.
+Uses Node.js built-in test runner with 50 tests covering all configuration options and edge cases.
 
 ## Why "GuMap"?
 
-The name combines 固 (gù, meaning "solid" or "firm" in Chinese) with Map—a nod to the immutability features.
-Pronunciation: "goo-map".
+The name combines 固 (gù, meaning "solid" or "firm" in Chinese) with Map—a nod to the immutability features. Pronunciation: "goo-map".
 
 ## License
 
