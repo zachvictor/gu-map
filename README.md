@@ -1,7 +1,7 @@
 # GuMap
 
 [![npm version](https://img.shields.io/npm/v/@zachvictor/gu-map.svg)](https://www.npmjs.com/package/@zachvictor/gu-map)
-[![license](https://img.shields.io/npm/l/@zachvictor/gu-map.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![license](https://img.shields.io/npm/l/@zachvictor/gu-map.svg)](LICENSE)
 
 A JavaScript Map wrapper with **dot accessor notation** and **immutability** features.
 
